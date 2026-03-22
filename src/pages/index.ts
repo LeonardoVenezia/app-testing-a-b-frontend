@@ -1,3 +1,3 @@
-export { default as Home } from './Home';
-export { default as Examples } from './Examples';
-export { default as Products } from './Products';
+export { default as Dashboard } from './Dashboard/Dashboard';
+export { default as CreateTest } from './CreateTest/CreateTest';
+export { default as TestDetail } from './TestDetail/TestDetail';
