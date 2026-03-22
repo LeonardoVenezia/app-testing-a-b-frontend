@@ -31,7 +31,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     navigateHeaderRemove(nexo);
   }, []);
-
+  console.log('esto es una prueba')
   return (
     <Page maxWidth="800px">
       <Page.Header
