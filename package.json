@@ -16,6 +16,8 @@
     "@nimbus-ds/styles": "^9.3.0",
     "@nimbus-ds/tokens": "^8.1.0",
     "@tiendanube/nexo": "1.0.0-rc.7",
+    "@tiptap/react": "^3.21.0",
+    "@tiptap/starter-kit": "^3.21.0",
     "axios": "^1.4.0",
     "i18next": "^23.4.5",
     "i18next-browser-languagedetector": "^7.1.0",
