@@ -11,21 +11,7 @@ import {
   Icon,
   Select,
 } from '@nimbus-ds/components';
-import {
-  PlusCircleIcon,
-  ChevronDownIcon,
-  PictureIcon,
-  BoldIcon,
-  ItalicIcon,
-  UndoIcon,
-  RedoIcon,
-  RemoveFormatIcon,
-  ListIcon,
-  OrderedListIcon,
-  AlignLeftIcon,
-  LinkIcon,
-  EllipsisIcon
-} from '@nimbus-ds/icons';
+import { PlusCircleIcon } from '@nimbus-ds/icons';
 import axios from '@/app/Axios';
 
 import { Editor } from '@tinymce/tinymce-react';
@@ -272,58 +258,58 @@ const CreateTest: React.FC = () => {
                       </Box>
                     </Card.Body>
                   </Card>
-                  </Box>
                 </Box>
               </Box>
-            </Layout.Section>
+            </Box>
+          </Layout.Section>
 
-            {/* COLUMNA LATERAL */}
-            <Layout.Section>
-              <Card>
-                <Card.Header title="Configuración del Test" />
-                <Card.Body>
-                  <Box display="flex" flexDirection="column" gap="4">
+          {/* COLUMNA LATERAL */}
+          <Layout.Section>
+            <Card>
+              <Card.Header title="Configuración del Test" />
+              <Card.Body>
+                <Box display="flex" flexDirection="column" gap="4">
+                  <Box>
+                    <Box mb="1">
+                      <Text fontWeight="bold">Nombre interno</Text>
+                    </Box>
+                    <Input
+                      name="testName"
+                      placeholder="Ej: A/B Pricing Zapatillas"
+                      value={testName}
+                      onChange={(e: any) => setTestName(e.target.value)}
+                    />
+                  </Box>
+                  {loadingProducts ? (
+                    <Spinner />
+                  ) : (
                     <Box>
                       <Box mb="1">
-                        <Text fontWeight="bold">Nombre interno</Text>
+                        <Text fontWeight="bold">Producto Original</Text>
                       </Box>
-                      <Input
-                        name="testName"
-                        placeholder="Ej: A/B Pricing Zapatillas"
-                        value={testName}
-                        onChange={(e: any) => setTestName(e.target.value)}
-                      />
+                      <Select
+                        id="originalProductId"
+                        name="originalProductId"
+                        value={originalProductId}
+                        onChange={(e: any) => setOriginalProductId(e.target.value)}
+                      >
+                        <option value="">Seleccione un producto...</option>
+                        {productOptions.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </Select>
                     </Box>
-                    {loadingProducts ? (
-                      <Spinner />
-                    ) : (
-                      <Box>
-                        <Box mb="1">
-                          <Text fontWeight="bold">Producto Original</Text>
-                        </Box>
-                        <Select
-                          id="originalProductId"
-                          name="originalProductId"
-                          value={originalProductId}
-                          onChange={(e: any) => setOriginalProductId(e.target.value)}
-                        >
-                          <option value="">Seleccione un producto...</option>
-                          {productOptions.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {o.label}
-                            </option>
-                          ))}
-                        </Select>
-                      </Box>
-                    )}
-                  </Box>
-                </Card.Body>
-              </Card>
-            </Layout.Section>
-          </Layout>
-        </Page.Body>
-      </Page>
-    );
+                  )}
+                </Box>
+              </Card.Body>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page.Body>
+    </Page>
+  );
 };
 
 export default CreateTest;
