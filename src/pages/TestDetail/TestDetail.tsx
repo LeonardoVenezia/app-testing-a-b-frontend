@@ -17,17 +17,27 @@ interface VariantMetrics {
   paid_revenue: number;
   conversion_rate: number;
   aov: number;
+  rpv: number;
+  bounce_rate: number;
   add_to_cart_rate: number;
   checkout_rate: number;
   purchase_rate: number;
 }
 
-interface Metrics { A: VariantMetrics; B: VariantMetrics; }
+interface StatisticalSignificance {
+  p_value: number | null;
+  confidence_level: number | null;
+  is_significant: boolean;
+  winner: string | null;
+  message: string;
+}
+
+interface Metrics { A: VariantMetrics; B: VariantMetrics; statistical_significance: StatisticalSignificance; }
 
 const fmt = (n: number, decimals = 2) => Number(n).toFixed(decimals);
 const fmtCurrency = (n: number) => `$${Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
 
-function MetricRow({ label, valueA, valueB, format = 'number' }: { label: string; valueA: number; valueB: number; format?: 'number' | 'percent' | 'currency' | 'seconds' }) {
+function MetricRow({ label, valueA, valueB, format = 'number', lowerIsBetter = false }: { label: string; valueA: number; valueB: number; format?: 'number' | 'percent' | 'currency' | 'seconds'; lowerIsBetter?: boolean }) {
   const render = (v: number) => {
     switch (format) {
       case 'percent': return fmt(v) + '%';
@@ -36,7 +46,9 @@ function MetricRow({ label, valueA, valueB, format = 'number' }: { label: string
       default: return String(Math.round(v));
     }
   };
-  const better = valueA > valueB ? 'A' : valueB > valueA ? 'B' : null;
+  const better = lowerIsBetter
+    ? (valueA < valueB ? 'A' : valueB < valueA ? 'B' : null)
+    : (valueA > valueB ? 'A' : valueB > valueA ? 'B' : null);
 
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" padding="2" borderColor="neutral-surfaceHighlight" borderStyle="solid" borderWidth="none" borderBottomWidth="1">
@@ -55,21 +67,28 @@ function MetricRow({ label, valueA, valueB, format = 'number' }: { label: string
   );
 }
 
-function determineWinner(m: Metrics): { winner: string | null; confidence: string } {
-  const a = m.A, b = m.B;
-  if (a.unique_views < 30 && b.unique_views < 30) return { winner: null, confidence: 'Datos insuficientes (mín. 30 vistas por variante)' };
+function MetricRowCompact({ label, countA, countB, rateA, rateB }: { label: string; countA: number; countB: number; rateA: number; rateB: number }) {
+  const render = (count: number, rate: number) => `${Math.round(count)} (${fmt(rate)}%)`;
+  const better = rateA > rateB ? 'A' : rateB > rateA ? 'B' : null;
 
-  const crA = a.conversion_rate, crB = b.conversion_rate;
-  if (crA === 0 && crB === 0) return { winner: null, confidence: 'Sin conversiones aún' };
-
-  const diff = Math.abs(crA - crB);
-  const avg = (crA + crB) / 2 || 1;
-  const relDiff = (diff / avg) * 100;
-
-  if (relDiff < 5) return { winner: null, confidence: `Diferencia marginal (${fmt(relDiff, 1)}%). Necesitás más datos.` };
-  if (relDiff < 15) return { winner: crA > crB ? 'A' : 'B', confidence: `Tendencia leve (${fmt(relDiff, 1)}% diferencia relativa). Seguí recopilando datos.` };
-  return { winner: crA > crB ? 'A' : 'B', confidence: `Diferencia significativa (${fmt(relDiff, 1)}% relativa).` };
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" padding="2" borderColor="neutral-surfaceHighlight" borderStyle="solid" borderWidth="none" borderBottomWidth="1">
+      <Box width="40%"><Text fontSize="caption">{label}</Text></Box>
+      <Box width="25%" textAlign="center">
+        <Text fontWeight={better === 'A' ? 'bold' : 'regular'} color={better === 'A' ? 'success-textLow' : 'neutral-textLow'}>
+          {render(countA, rateA)}
+        </Text>
+      </Box>
+      <Box width="25%" textAlign="center">
+        <Text fontWeight={better === 'B' ? 'bold' : 'regular'} color={better === 'B' ? 'success-textLow' : 'neutral-textLow'}>
+          {render(countB, rateB)}
+        </Text>
+      </Box>
+    </Box>
+  );
 }
+
+
 
 const TestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -119,7 +138,7 @@ const TestDetail: React.FC = () => {
   if (loading) return <Box display="flex" justifyContent="center" padding="8"><Spinner /></Box>;
   if (!test || !metrics) return <Text>No encontrado</Text>;
 
-  const { winner, confidence } = determineWinner(metrics);
+  const { winner, message: confidence, confidence_level } = metrics.statistical_significance;
 
   return (
     <Page maxWidth="900px">
@@ -137,6 +156,11 @@ const TestDetail: React.FC = () => {
                   <Tag appearance={winner ? 'success' : 'neutral'}>
                     {winner ? `🏆 Ganador: Grupo ${winner} (${winner === 'A' ? 'Original' : 'Variante'})` : '⏳ Sin ganador definido'}
                   </Tag>
+                  {confidence_level !== null && (
+                    <Tag appearance={confidence_level >= 95 ? 'success' : confidence_level >= 80 ? 'warning' : 'neutral'}>
+                      {fmt(confidence_level, 1)}% confianza
+                    </Tag>
+                  )}
                   <Text fontSize="caption" color="neutral-textDisabled">{confidence}</Text>
                 </Box>
               </Card.Body>
@@ -158,26 +182,25 @@ const TestDetail: React.FC = () => {
                 {/* Top of Funnel */}
                 <Box mb="2"><Text fontWeight="bold" fontSize="caption" color="neutral-textDisabled">🔍 Visibilidad</Text></Box>
                 <MetricRow label="Vistas Únicas" valueA={metrics.A.unique_views} valueB={metrics.B.unique_views} />
+                <MetricRow label="Tasa de Rebote" valueA={metrics.A.bounce_rate} valueB={metrics.B.bounce_rate} format="percent" lowerIsBetter />
                 <MetricRow label="Tiempo Promedio en Página" valueA={metrics.A.avg_time_on_page} valueB={metrics.B.avg_time_on_page} format="seconds" />
 
                 {/* Middle of Funnel */}
                 <Box mt="4" mb="2"><Text fontWeight="bold" fontSize="caption" color="neutral-textDisabled">👆 Interacción y Micro-conversiones</Text></Box>
                 <MetricRow label="Clics en Imágenes" valueA={metrics.A.image_clicks} valueB={metrics.B.image_clicks} />
                 <MetricRow label="Interacción con Descripción" valueA={metrics.A.description_interactions} valueB={metrics.B.description_interactions} />
-                <MetricRow label="Agregar al Carrito" valueA={metrics.A.add_to_cart} valueB={metrics.B.add_to_cart} />
-                <MetricRow label="Tasa Add-to-Cart" valueA={metrics.A.add_to_cart_rate} valueB={metrics.B.add_to_cart_rate} format="percent" />
-                <MetricRow label="Iniciar Checkout" valueA={metrics.A.checkout_started} valueB={metrics.B.checkout_started} />
-                <MetricRow label="Tasa Checkout (ATC→Checkout)" valueA={metrics.A.checkout_rate} valueB={metrics.B.checkout_rate} format="percent" />
+                <MetricRowCompact label="Agregar al Carrito" countA={metrics.A.add_to_cart} countB={metrics.B.add_to_cart} rateA={metrics.A.add_to_cart_rate} rateB={metrics.B.add_to_cart_rate} />
+                <MetricRowCompact label="Iniciar Checkout" countA={metrics.A.checkout_started} countB={metrics.B.checkout_started} rateA={metrics.A.checkout_rate} rateB={metrics.B.checkout_rate} />
 
                 {/* Bottom of Funnel */}
                 <Box mt="4" mb="2"><Text fontWeight="bold" fontSize="caption" color="neutral-textDisabled">💰 Macro-conversiones y Monetización</Text></Box>
-                <MetricRow label="Órdenes Completadas" valueA={metrics.A.orders_completed} valueB={metrics.B.orders_completed} />
+                <MetricRowCompact label="Órdenes Completadas" countA={metrics.A.orders_completed} countB={metrics.B.orders_completed} rateA={metrics.A.purchase_rate} rateB={metrics.B.purchase_rate} />
                 <MetricRow label="Órdenes Pagadas" valueA={metrics.A.orders_paid} valueB={metrics.B.orders_paid} />
-                <MetricRow label="Tasa de Compra (Checkout→Orden)" valueA={metrics.A.purchase_rate} valueB={metrics.B.purchase_rate} format="percent" />
                 <MetricRow label="Tasa de Conversión (CR)" valueA={metrics.A.conversion_rate} valueB={metrics.B.conversion_rate} format="percent" />
                 <MetricRow label="Ingresos (Revenue)" valueA={metrics.A.revenue} valueB={metrics.B.revenue} format="currency" />
                 <MetricRow label="Ingresos Pagados" valueA={metrics.A.paid_revenue} valueB={metrics.B.paid_revenue} format="currency" />
                 <MetricRow label="Valor Promedio de Pedido (AOV)" valueA={metrics.A.aov} valueB={metrics.B.aov} format="currency" />
+                <MetricRow label="Ingreso por Visitante (RPV)" valueA={metrics.A.rpv} valueB={metrics.B.rpv} format="currency" />
               </Card.Body>
             </Card>
           </Layout.Section>
