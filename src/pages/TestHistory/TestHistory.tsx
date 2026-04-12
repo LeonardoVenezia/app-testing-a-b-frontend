@@ -1,56 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Page, Layout } from '@nimbus-ds/patterns';
-import { Card, Text, Button, Box, Title, Spinner, Tag } from '@nimbus-ds/components';
-import { PlusCircleIcon, ChevronRightIcon } from '@nimbus-ds/icons';
+import { Card, Text, Button, Box, Spinner, Tag } from '@nimbus-ds/components';
+import { ChevronRightIcon } from '@nimbus-ds/icons';
 import axios from '@/app/Axios';
 
-const Dashboard: React.FC = () => {
+const TestHistory: React.FC = () => {
   const navigate = useNavigate();
   const [tests, setTests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTests();
+    axios.get('/ab-tests/deleted')
+      .then(res => setTests(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
-
-  const fetchTests = async () => {
-    try {
-      const res = await axios.get('/ab-tests');
-      setTests(res.data);
-    } catch (e) {
-      console.error('Failed to fetch tests', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Page maxWidth="800px">
       <Page.Header
-        title="Tests A/B"
-        buttonStack={
-          <Box display="flex" gap="2">
-            <Button appearance="transparent" onClick={() => navigate('/tests/history')}>
-              Historial
-            </Button>
-            <Button appearance="primary" onClick={() => navigate('/tests/new')}>
-              Nuevo Test
-            </Button>
-          </Box>
-        }
+        title="Historial de Tests Eliminados"
+        buttonStack={<Button onClick={() => navigate('/')}>Volver</Button>}
       />
       <Page.Body>
         <Layout columns="1">
           <Layout.Section>
             {loading ? (
-              <Box display="flex" justifyContent="center" padding="4">
-                <Spinner />
-              </Box>
+              <Box display="flex" justifyContent="center" padding="4"><Spinner /></Box>
             ) : tests.length === 0 ? (
               <Card>
                 <Card.Body>
-                  <Text>No tenés ningún Test A/B activo. ¡Creá uno para empezar a optimizar tus ventas!</Text>
+                  <Text>No hay tests eliminados en el historial.</Text>
                 </Card.Body>
               </Card>
             ) : (
@@ -60,12 +41,17 @@ const Dashboard: React.FC = () => {
                     <Card.Body>
                       <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Box>
-                          <Title as="h5">{test.name}</Title>
+                          <Text fontWeight="bold">{test.name}</Text>
                           <Box display="flex" gap="2" mt="2">
-                            <Tag appearance={test.status === "ACTIVE" ? "success" : "neutral"}>
-                               {test.status}
-                            </Tag>
-                            <Text color="neutral-textDisabled">Original ID: {test.original_product_id}</Text>
+                            <Tag appearance="neutral">Eliminado</Tag>
+                            <Text fontSize="caption" color="neutral-textDisabled">
+                              {new Date(test.deleted_at).toLocaleDateString('es-AR')}
+                            </Text>
+                          </Box>
+                          <Box mt="1">
+                            <Text fontSize="caption" color="neutral-textDisabled">
+                              Original ID: {test.original_product_id}
+                            </Text>
                           </Box>
                         </Box>
                         <Button appearance="transparent">
@@ -84,4 +70,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default TestHistory;

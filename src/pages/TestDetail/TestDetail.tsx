@@ -206,6 +206,7 @@ const TestDetail: React.FC = () => {
           </Layout.Section>
 
           {/* Admin controls */}
+          {!test.deleted_at && (
           <Layout.Section>
             <Card>
               <Card.Header title="Administración del Test" />
@@ -222,6 +223,7 @@ const TestDetail: React.FC = () => {
               </Card.Body>
             </Card>
           </Layout.Section>
+          )}
         </Layout>
       </Page.Body>
     </Page>
