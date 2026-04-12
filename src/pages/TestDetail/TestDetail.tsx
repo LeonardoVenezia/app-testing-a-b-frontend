@@ -93,6 +93,7 @@ function MetricRowCompact({ label, countA, countB, rateA, rateB }: { label: stri
 const TestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const backPath = sessionStorage.getItem('testDetailBack') || '/';
   const [test, setTest] = useState<any>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,7 +145,7 @@ const TestDetail: React.FC = () => {
     <Page maxWidth="900px">
       <Page.Header
         title={test.name}
-        buttonStack={<Button onClick={() => navigate('/')}>Volver</Button>}
+        buttonStack={<Button onClick={() => { sessionStorage.removeItem('testDetailBack'); navigate(backPath); }}>Volver</Button>}
       />
       <Page.Body>
         <Layout columns="1">

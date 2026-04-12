@@ -37,7 +37,7 @@ const TestHistory: React.FC = () => {
             ) : (
               tests.map(test => (
                 <Box mb="4" key={test.id}>
-                  <Card onClick={() => navigate(`/tests/${test.id}`)}>
+                  <Card onClick={() => { sessionStorage.setItem('testDetailBack', '/tests/history'); navigate(`/tests/${test.id}`); }}>
                     <Card.Body>
                       <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Box>
