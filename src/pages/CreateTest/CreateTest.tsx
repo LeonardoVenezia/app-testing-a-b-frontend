@@ -26,6 +26,7 @@ interface ImageRow {
 const CreateTest: React.FC = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
+  const [existingTests, setExistingTests] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Configuracion del Test
@@ -49,12 +50,16 @@ const CreateTest: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const selectedProduct = products.find((p) => String(p.id) === originalProductId) || null;
+
 
 
   useEffect(() => {
-    axios
-      .get('/products')
-      .then((res) => setProducts(res.data))
+    Promise.all([axios.get('/products'), axios.get('/ab-tests')])
+      .then(([prodRes, testsRes]) => {
+        setProducts(prodRes.data);
+        setExistingTests(testsRes.data);
+      })
       .catch(console.error)
       .finally(() => setLoadingProducts(false));
   }, []);
@@ -125,7 +130,14 @@ const CreateTest: React.FC = () => {
     }
   };
 
-  const productOptions = products.map((p) => ({ label: p.name?.es || p.name?.pt || p.name?.en || 'Sin nombre', value: String(p.id) }));
+  const usedProductIds = new Set(
+    existingTests
+      .filter((t: any) => t.status === 'ACTIVE')
+      .flatMap((t: any) => [String(t.original_product_id), String(t.variant_product_id)])
+  );
+  const productOptions = products
+    .filter((p) => !usedProductIds.has(String(p.id)))
+    .map((p) => ({ label: p.name?.es || p.name?.pt || p.name?.en || 'Sin nombre', value: String(p.id) }));
 
   return (
     <Page maxWidth="1200px">
@@ -142,10 +154,79 @@ const CreateTest: React.FC = () => {
       />
 
       <Page.Body>
-        <Layout columns="2 - asymmetric">
+        <Layout columns="1">
+          {/* Fila superior: Configuración + Producto Original */}
           <Layout.Section>
+            <Box display="grid" gridTemplateColumns="1fr 1fr" gap="4">
+              {/* Configuración del Test */}
+              <Card>
+                <Card.Header title="Configuración del Test" />
+                <Card.Body>
+                  <Box display="flex" flexDirection="column" gap="4">
+                    <Box>
+                      <Box mb="1"><Text fontWeight="bold">Nombre interno</Text></Box>
+                      <Input
+                        name="testName"
+                        placeholder="Ej: A/B Pricing Zapatillas"
+                        value={testName}
+                        onChange={(e: any) => setTestName(e.target.value)}
+                      />
+                    </Box>
+                    {loadingProducts ? (
+                      <Spinner />
+                    ) : (
+                      <Box>
+                        <Box mb="1"><Text fontWeight="bold">Producto Original</Text></Box>
+                        <Select
+                          id="originalProductId"
+                          name="originalProductId"
+                          value={originalProductId}
+                          onChange={(e: any) => setOriginalProductId(e.target.value)}
+                        >
+                          <option value="">Seleccione un producto...</option>
+                          {productOptions.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </Select>
+                      </Box>
+                    )}
+                  </Box>
+                </Card.Body>
+              </Card>
 
-            {/* 1. Nombre y descripción */}
+              {/* Producto Original seleccionado */}
+              {selectedProduct ? (
+                <Card>
+                  <Card.Header title="Producto Original (Grupo A)" />
+                  <Card.Body>
+                    <Box display="flex" gap="4" alignItems="center">
+                      {selectedProduct.images?.[0]?.src && (
+                        <img src={selectedProduct.images[0].src} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, border: '1px solid #DFE3E8' }} />
+                      )}
+                      <Box display="flex" flexDirection="column" gap="1">
+                        <Text fontWeight="bold">{selectedProduct.name?.es || selectedProduct.name?.pt || selectedProduct.name?.en || 'Sin nombre'}</Text>
+                        {selectedProduct.variants?.[0]?.price && (
+                          <Text color="neutral-textLow">${selectedProduct.variants[0].price}</Text>
+                        )}
+                      </Box>
+                    </Box>
+                  </Card.Body>
+                </Card>
+              ) : (
+                <Card>
+                  <Card.Body>
+                    <Box display="flex" justifyContent="center" alignItems="center" padding="8">
+                      <Text color="neutral-textDisabled">Seleccioná un producto para ver su información.</Text>
+                    </Box>
+                  </Card.Body>
+                </Card>
+              )}
+            </Box>
+          </Layout.Section>
+
+          {/* Formulario de modificaciones (solo visible con producto seleccionado) */}
+          {selectedProduct && (
+          <Layout.Section>
             <Box>
               <Box display="flex" flexDirection="column" gap="4">
                 <Text fontSize="caption" color="neutral-textDisabled">
@@ -166,14 +247,7 @@ const CreateTest: React.FC = () => {
                   <Box mb="2" display="flex" alignItems="center" gap="2">
                     <Text color="neutral-textHigh">Descripción</Text>
                   </Box>
-
-                  {/* Contenedor con los bordes estilo Nimbus */}
-                  <div style={{
-                    border: '1px solid #DFE3E8',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    backgroundColor: '#FFFFFF'
-                  }}>
+                  <div style={{ border: '1px solid #DFE3E8', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
                     <Editor
                       licenseKey="gpl"
                       tinymceScriptSrc="/tinymce/tinymce.min.js"
@@ -182,7 +256,7 @@ const CreateTest: React.FC = () => {
                       init={{
                         height: 250,
                         menubar: false,
-                        statusbar: true, // Muestra el path de etiquetas (ej: "p") abajo, igual que Tiendanube
+                        statusbar: true,
                         plugins: [
                           'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                           'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
@@ -190,13 +264,10 @@ const CreateTest: React.FC = () => {
                         ],
                         toolbar: 'blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | link image table | help',
                         content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; }',
-                        // Ocultamos los bordes internos de TinyMCE para que use los del div de arriba (estilo Nimbus)
                         setup: (editor) => {
                           editor.on('init', () => {
                             const container = editor.getContainer();
-                            if (container) {
-                              container.style.border = 'none';
-                            }
+                            if (container) container.style.border = 'none';
                           });
                         }
                       }}
@@ -204,7 +275,6 @@ const CreateTest: React.FC = () => {
                   </div>
                 </Box>
 
-                {/* Resto del formulario (Fotos, Precios, etc.) se mantiene intacto... */}
                 {/* 2. Fotos y video (Unificado) */}
                 <Box mb="4">
                   <Card>
@@ -262,50 +332,7 @@ const CreateTest: React.FC = () => {
               </Box>
             </Box>
           </Layout.Section>
-
-          {/* COLUMNA LATERAL */}
-          <Layout.Section>
-            <Card>
-              <Card.Header title="Configuración del Test" />
-              <Card.Body>
-                <Box display="flex" flexDirection="column" gap="4">
-                  <Box>
-                    <Box mb="1">
-                      <Text fontWeight="bold">Nombre interno</Text>
-                    </Box>
-                    <Input
-                      name="testName"
-                      placeholder="Ej: A/B Pricing Zapatillas"
-                      value={testName}
-                      onChange={(e: any) => setTestName(e.target.value)}
-                    />
-                  </Box>
-                  {loadingProducts ? (
-                    <Spinner />
-                  ) : (
-                    <Box>
-                      <Box mb="1">
-                        <Text fontWeight="bold">Producto Original</Text>
-                      </Box>
-                      <Select
-                        id="originalProductId"
-                        name="originalProductId"
-                        value={originalProductId}
-                        onChange={(e: any) => setOriginalProductId(e.target.value)}
-                      >
-                        <option value="">Seleccione un producto...</option>
-                        {productOptions.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </Box>
-                  )}
-                </Box>
-              </Card.Body>
-            </Card>
-          </Layout.Section>
+          )}
         </Layout>
       </Page.Body>
     </Page>
