@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Page, Layout } from '@nimbus-ds/patterns';
-import { Card, Text, Button, Box, Title, Spinner, Tag } from '@nimbus-ds/components';
-import { PlusCircleIcon, ChevronRightIcon } from '@nimbus-ds/icons';
+import { Card, Text, Button, Box, Title, Spinner, Tag, Thumbnail } from '@nimbus-ds/components';
+import { ChevronRightIcon } from '@nimbus-ds/icons';
 import axios from '@/app/Axios';
+
+const statusAppearance: Record<string, 'success' | 'warning' | 'neutral'> = {
+  ACTIVE: 'success',
+  PAUSED: 'warning',
+  FINISHED: 'neutral',
+};
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -11,19 +17,11 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTests();
+    axios.get('/ab-tests')
+      .then(res => setTests(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
-
-  const fetchTests = async () => {
-    try {
-      const res = await axios.get('/ab-tests');
-      setTests(res.data);
-    } catch (e) {
-      console.error('Failed to fetch tests', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Page maxWidth="800px">
@@ -44,9 +42,7 @@ const Dashboard: React.FC = () => {
         <Layout columns="1">
           <Layout.Section>
             {loading ? (
-              <Box display="flex" justifyContent="center" padding="4">
-                <Spinner />
-              </Box>
+              <Box display="flex" justifyContent="center" padding="4"><Spinner /></Box>
             ) : tests.length === 0 ? (
               <Card>
                 <Card.Body>
@@ -54,28 +50,40 @@ const Dashboard: React.FC = () => {
                 </Card.Body>
               </Card>
             ) : (
-              tests.map(test => (
-                <Box mb="4" key={test.id}>
-                  <Card onClick={() => navigate(`/tests/${test.id}`)}>
+              <Box display="flex" flexDirection="column" gap="4">
+                {tests.map(test => (
+                  <Card key={test.id} onClick={() => navigate(`/tests/${test.id}`)}>
                     <Card.Body>
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Box>
+                      <Box display="flex" gap="4" alignItems="center">
+                        <Thumbnail
+                          src={test.product_image_url || ''}
+                          alt={test.product_name || test.name}
+                          width="72px"
+                        />
+                        <Box flex="1" display="flex" flexDirection="column" gap="1">
                           <Title as="h5">{test.name}</Title>
-                          <Box display="flex" gap="2" mt="2">
-                            <Tag appearance={test.status === "ACTIVE" ? "success" : "neutral"}>
-                               {test.status}
+                          {test.product_name && (
+                            <Text fontSize="caption" color="neutral-textDisabled">
+                              {test.product_name}
+                            </Text>
+                          )}
+                          <Box display="flex" gap="2" alignItems="center" mt="1">
+                            <Tag appearance={statusAppearance[test.status] || 'neutral'}>
+                              {test.status}
                             </Tag>
-                            <Text color="neutral-textDisabled">Original ID: {test.original_product_id}</Text>
+                            <Text fontSize="caption" color="neutral-textDisabled">
+                              Creado: {new Date(test.created_at).toLocaleDateString('es-AR')}
+                            </Text>
                           </Box>
                         </Box>
                         <Button appearance="transparent">
-                          Ver Detalles <ChevronRightIcon />
+                          <ChevronRightIcon />
                         </Button>
                       </Box>
                     </Card.Body>
                   </Card>
-                </Box>
-              ))
+                ))}
+              </Box>
             )}
           </Layout.Section>
         </Layout>
