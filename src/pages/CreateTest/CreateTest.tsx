@@ -52,7 +52,28 @@ const CreateTest: React.FC = () => {
 
   const selectedProduct = products.find((p) => String(p.id) === originalProductId) || null;
 
-
+  // Pre-fill variant form with original product data
+  useEffect(() => {
+    const product = products.find((p) => String(p.id) === originalProductId) || null;
+    if (!product) {
+      setVariantName('');
+      setVariantDescription('');
+      setVariantPrice('');
+      setVariantVideoUrl('');
+      setImageRows([]);
+      return;
+    }
+    const lang = product.name?.es ? 'es' : product.name?.pt ? 'pt' : 'en';
+    setVariantName(product.name?.[lang] || '');
+    setVariantDescription(product.description?.[lang] || '');
+    setVariantPrice(product.variants?.[0]?.price || '');
+    setVariantVideoUrl(product.video_url || '');
+    if (product.images?.length) {
+      setImageRows(product.images.map((img: any, i: number) => ({ id: Date.now() + i, src: img.src })));
+    } else {
+      setImageRows([]);
+    }
+  }, [originalProductId, products]);
 
   useEffect(() => {
     Promise.all([axios.get('/products'), axios.get('/ab-tests')])
