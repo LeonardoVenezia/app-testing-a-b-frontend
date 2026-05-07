@@ -37,6 +37,7 @@ const CreateTest: React.FC = () => {
   const [variantName, setVariantName] = useState('');
   const [variantDescription, setVariantDescription] = useState('');
   const [variantPrice, setVariantPrice] = useState('');
+  const [variantPromoPrice, setVariantPromoPrice] = useState('');
   const [variantVideoUrl, setVariantVideoUrl] = useState('');
 
   // Images 
@@ -59,6 +60,7 @@ const CreateTest: React.FC = () => {
       setVariantName('');
       setVariantDescription('');
       setVariantPrice('');
+      setVariantPromoPrice('');
       setVariantVideoUrl('');
       setImageRows([]);
       return;
@@ -67,6 +69,7 @@ const CreateTest: React.FC = () => {
     setVariantName(product.name?.[lang] || '');
     setVariantDescription(product.description?.[lang] || '');
     setVariantPrice(product.variants?.[0]?.price || '');
+    setVariantPromoPrice(product.variants?.[0]?.promotional_price || '');
     setVariantVideoUrl(product.video_url || '');
     if (product.images?.length) {
       setImageRows(product.images.map((img: any, i: number) => ({ id: Date.now() + i, src: img.src })));
@@ -138,6 +141,7 @@ const CreateTest: React.FC = () => {
           ...(variantName && { name: variantName }),
           ...(variantDescription && { description: variantDescription }),
           ...(variantPrice && { price: variantPrice }),
+          ...(variantPromoPrice !== undefined && { promotional_price: variantPromoPrice }),
           ...(variantVideoUrl && { video_url: variantVideoUrl }),
           ...(filledImages.length > 0 && { images: filledImages }),
         },
@@ -345,7 +349,7 @@ const CreateTest: React.FC = () => {
                     <Card.Body>
                       <Box display="grid" gridTemplateColumns="1fr 1fr" gap="4">
                         <Box><Box mb="1"><Text fontWeight="bold">Precio original</Text></Box><Input name="variantPrice" type="number" min="0" step="0.01" placeholder="$" value={variantPrice} onChange={(e: any) => setVariantPrice(e.target.value)} /></Box>
-                        <Box><Box mb="1"><Text fontWeight="bold">Precio promocional</Text></Box><Input name="placeholderPromo" type="number" placeholder="$ (No disponible en MVP)" disabled /></Box>
+                        <Box><Box mb="1"><Text fontWeight="bold">Precio promocional</Text></Box><Input name="variantPromoPrice" type="number" min="0" step="0.01" placeholder="$" value={variantPromoPrice} onChange={(e: any) => setVariantPromoPrice(e.target.value)} /></Box>
                       </Box>
                     </Card.Body>
                   </Card>
