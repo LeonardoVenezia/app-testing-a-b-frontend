@@ -33,7 +33,7 @@ const App: React.FC = () => {
         justifyContent="center"
         alignItems="center"
       >
-        <Text>Conectando...</Text>
+        <Text>Conectando…</Text>
       </Box>
     );
 

@@ -21,11 +21,14 @@ interface IDarkModeProvider {
 
 export const DarkModeProvider: React.FC<IDarkModeProvider> = ({ children }) => {
   const [darkMode, setDarkMode] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const toggleDarkMode = useCallback(
-    () => setDarkMode((prevState) => !prevState),
-    [setDarkMode],
+    () => setDarkMode((prevState) => {
+      const next = !prevState;
+      localStorage.setItem('darkMode', JSON.stringify(next));
+      return next;
+    }),
+    [],
   );
 
   const contextValue = useMemo(
@@ -34,7 +37,6 @@ export const DarkModeProvider: React.FC<IDarkModeProvider> = ({ children }) => {
   );
 
   useEffect(() => {
-    setMounted(true);
     const storageValue = localStorage.getItem('darkMode');
     if (storageValue) {
       setDarkMode(JSON.parse(storageValue));
@@ -42,12 +44,6 @@ export const DarkModeProvider: React.FC<IDarkModeProvider> = ({ children }) => {
       setDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
     }
   }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    }
-  }, [darkMode, mounted]);
 
   return (
     <DarkModeContext.Provider value={contextValue}>
