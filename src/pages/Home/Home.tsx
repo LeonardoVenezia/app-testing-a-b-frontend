@@ -75,6 +75,7 @@ const Home: React.FC = () => {
                     i18nKey={t('home.first-card.description')}
                     components={[
                       <Link
+                        key="nimbus"
                         as="a"
                         href="https://nimbus.tiendanube.com/"
                         target="_blank"
@@ -83,6 +84,7 @@ const Home: React.FC = () => {
                         children=""
                       />,
                       <Link
+                        key="api-docs"
                         as="a"
                         href="https://tiendanube.github.io/api-documentation/intro"
                         target="_blank"

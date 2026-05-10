@@ -15,14 +15,14 @@ const HomeDataProvider: React.FC<IHomeDataProvider> = ({ children }) => {
   useEffect(() => onGetTotalProducts(), []);
 
   const onGetTotalProducts = () => {
-    setIsLoading({ ...isLoading, totalProducts: true });
+    setIsLoading(prev => ({ ...prev, totalProducts: true }));
     request<{ total: number }>({
       url: '/products/total',
       method: 'GET',
     })
       .then((response) => {
         setTotalProduts(`${response.content.total}`);
-        setIsLoading({ ...isLoading, totalProducts: false });
+        setIsLoading(prev => ({ ...prev, totalProducts: false }));
       })
       .catch((error) => {
         setTotalProduts('0');
@@ -32,12 +32,12 @@ const HomeDataProvider: React.FC<IHomeDataProvider> = ({ children }) => {
           duration: 4000,
           id: 'error-total-products',
         });
-        setIsLoading({ ...isLoading, totalProducts: false });
+        setIsLoading(prev => ({ ...prev, totalProducts: false }));
       });
   };
 
   const onCreateProduct = () => {
-    setIsLoading({ ...isLoading, createProduct: true });
+    setIsLoading(prev => ({ ...prev, createProduct: true }));
     request<{ total: number }>({
       url: '/products',
       method: 'POST',
@@ -50,7 +50,7 @@ const HomeDataProvider: React.FC<IHomeDataProvider> = ({ children }) => {
           duration: 4000,
           id: 'create-product',
         });
-        setIsLoading({ ...isLoading, createProduct: false });
+        setIsLoading(prev => ({ ...prev, createProduct: false }));
       })
       .catch((error) => {
         setTotalProduts('-');
@@ -60,7 +60,7 @@ const HomeDataProvider: React.FC<IHomeDataProvider> = ({ children }) => {
           duration: 4000,
           id: 'error-create-product',
         });
-        setIsLoading({ ...isLoading, createProduct: false });
+        setIsLoading(prev => ({ ...prev, createProduct: false }));
       });
   };
 

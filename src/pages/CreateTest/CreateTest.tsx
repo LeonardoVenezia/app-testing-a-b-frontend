@@ -208,7 +208,7 @@ const CreateTest: React.FC = () => {
                           value={originalProductId}
                           onChange={(e: any) => setOriginalProductId(e.target.value)}
                         >
-                          <option value="">Seleccione un producto...</option>
+                          <option value="">Seleccione un producto…</option>
                           {productOptions.map((o) => (
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
