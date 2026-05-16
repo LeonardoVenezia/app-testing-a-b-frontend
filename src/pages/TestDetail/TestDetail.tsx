@@ -136,6 +136,44 @@ const TestDetail: React.FC = () => {
     }
   };
 
+  const exportToCSV = () => {
+    const rows = [
+      ['Métrica', 'A (Original)', 'B (Variante)'],
+      ['Vistas Únicas', metrics!.A.unique_views, metrics!.B.unique_views],
+      ['Tasa de Rebote (%)', fmt(metrics!.A.bounce_rate), fmt(metrics!.B.bounce_rate)],
+      ['Tiempo Promedio en Página (s)', fmt(metrics!.A.avg_time_on_page, 1), fmt(metrics!.B.avg_time_on_page, 1)],
+      ['Clics en Imágenes', metrics!.A.image_clicks, metrics!.B.image_clicks],
+      ['Interacción con Descripción', metrics!.A.description_interactions, metrics!.B.description_interactions],
+      ['Agregar al Carrito', metrics!.A.add_to_cart, metrics!.B.add_to_cart],
+      ['Tasa Agregar al Carrito (%)', fmt(metrics!.A.add_to_cart_rate), fmt(metrics!.B.add_to_cart_rate)],
+      ['Iniciar Checkout', metrics!.A.checkout_started, metrics!.B.checkout_started],
+      ['Tasa Checkout (%)', fmt(metrics!.A.checkout_rate), fmt(metrics!.B.checkout_rate)],
+      ['Órdenes Completadas', metrics!.A.orders_completed, metrics!.B.orders_completed],
+      ['Tasa de Compra (%)', fmt(metrics!.A.purchase_rate), fmt(metrics!.B.purchase_rate)],
+      ['Órdenes Pagadas', metrics!.A.orders_paid, metrics!.B.orders_paid],
+      ['Tasa de Conversión (%)', fmt(metrics!.A.conversion_rate), fmt(metrics!.B.conversion_rate)],
+      ['Ingresos', fmt(metrics!.A.revenue), fmt(metrics!.B.revenue)],
+      ['Ingresos Pagados', fmt(metrics!.A.paid_revenue), fmt(metrics!.B.paid_revenue)],
+      ['AOV', fmt(metrics!.A.aov), fmt(metrics!.B.aov)],
+      ['RPV', fmt(metrics!.A.rpv), fmt(metrics!.B.rpv)],
+      [],
+      ['Significancia Estadística'],
+      ['P-Value', metrics!.statistical_significance.p_value ?? 'N/A'],
+      ['Nivel de Confianza (%)', metrics!.statistical_significance.confidence_level ?? 'N/A'],
+      ['Es Significativo', metrics!.statistical_significance.is_significant ? 'Sí' : 'No'],
+      ['Ganador', metrics!.statistical_significance.winner ?? 'Sin ganador'],
+      ['Mensaje', metrics!.statistical_significance.message],
+    ];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test-${test.name}-${id}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <Box display="flex" justifyContent="center" padding="8"><Spinner /></Box>;
   if (!test || !metrics) return <Text>No encontrado</Text>;
 
@@ -145,7 +183,12 @@ const TestDetail: React.FC = () => {
     <Page maxWidth="900px">
       <Page.Header
         title={test.name}
-        buttonStack={<Button onClick={() => { sessionStorage.removeItem('testDetailBack'); navigate(backPath); }}>Volver</Button>}
+        buttonStack={
+          <Box display="flex" gap="2">
+            <Button onClick={exportToCSV}>Exportar CSV</Button>
+            <Button onClick={() => { sessionStorage.removeItem('testDetailBack'); navigate(backPath); }}>Volver</Button>
+          </Box>
+        }
       />
       <Page.Body>
         <Layout columns="1">
